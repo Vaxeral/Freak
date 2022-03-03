@@ -28,7 +28,7 @@ class AABBEdges(Enum):
 	BOTTOM = 3
 	CORNER = 4
 
-def AABB_collision_response(rect: Rect, velocity: Vector2, other: Rect, side: AABBEdges, dt: float):
+def AABB_collision_response(rect: Rect, velocity: Vector2, other: Rect, side: AABBEdges, dt: float, collisions: int):
 	distance_x, distance_y = AABB_distance_to(rect, other)
 	velocity_x, velocity_y = velocity.x * dt, velocity.y * dt
 	x_axis_time_until_collide = abs(float(distance_x) / float(velocity_x)) if velocity_x != 0 else 0	
@@ -51,7 +51,11 @@ def AABB_collision_response(rect: Rect, velocity: Vector2, other: Rect, side: AA
 
 		if side == AABBEdges.CORNER:
 			shortest_time = min(x_axis_time_until_collide, y_axis_time_until_collide)
-			velocity.x = shortest_time * velocity.x
+			if collisions <= 1: velocity.x = shortest_time * velocity.x
+			# if collisions <= 1: velocity.y = shortest_time * velocity.y
+
+
+			# print("corner")
 
 
 class BasicPhysicsObject:

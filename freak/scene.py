@@ -1,6 +1,10 @@
 from typing import Type
+import pygame
 from pygame.event import Event
-from player import Player
+from pygame import Rect
+from player import Player, tiles
+
+from window import instance as window
 
 class Scene:
 	def __init__(self, name: str, manager):
@@ -26,6 +30,19 @@ class SceneGame(Scene):
 
 	def render(self):
 		self.player.render()
+		RECT_W = 32
+		RECT_H = 32
+		for j, row in enumerate(tiles):
+			for i, tile in enumerate(row):
+				color = (255, 0, 255, 0)
+				if tile == 1:
+					color = (255, 0, 0, 255)
+				elif tile == 2:
+					color = (0, 0, 255, 255)
+
+				if tile:
+					pygame.draw.rect(window.surface, color, Rect(128 + i * RECT_W, 128 + j * RECT_H, RECT_W, RECT_H))
+
 
 class SceneManager:
 	def __init__(self):
