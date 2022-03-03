@@ -1,13 +1,6 @@
 from typing import Tuple
-from pygame import Vector2, Rect, Vector3, Vector2
-import pygame
-
-from window import instance as window
-
-import math
-
-def clamp(n, lower, upper) -> float:
-	return max(lower, min(n, upper))
+from pygame import Vector2, Rect
+from enum import Enum
 
 def is_AABB_intersection(rect: Rect, other: Rect) -> bool:
 	return rect.x < other.x + other.w and other.x < rect.x + rect.w and rect.y < other.y + other.h and other.y < rect.y + rect.h
@@ -28,103 +21,45 @@ def AABB_distance_to(rect: Rect, other: Rect) -> Tuple[int, int]:
 
 	return dx, dy
 
-class PhysicsObject:
-	def __init__(self, x: float, y: float) -> None:
-		self.force_accumalated = Vector2(0, 0)
+class AABBEdges(Enum):
+	LEFT = 0
+	RIGHT = 1
+	TOP = 2
+	BOTTOM = 3
+	CORNER = 4
 
+def AABB_collision_response(rect: Rect, velocity: Vector2, other: Rect, side: AABBEdges, dt: float):
+	distance_x, distance_y = AABB_distance_to(rect, other)
+	velocity_x, velocity_y = velocity.x * dt, velocity.y * dt
+	x_axis_time_until_collide = abs(float(distance_x) / float(velocity_x)) if velocity_x != 0 else 0	
+	y_axis_time_until_collide = abs(float(distance_y) / float(velocity_y)) if velocity_y != 0 else 0
+
+	if velocity_x != 0 and velocity_y == 0:
+		if side == AABBEdges.LEFT or side == AABBEdges.RIGHT:
+			velocity.x = x_axis_time_until_collide * velocity.x
+
+	elif velocity_x == 0 and velocity_y != 0:
+		if side == AABBEdges.TOP or side == AABBEdges.BOTTOM: 
+			velocity.y = y_axis_time_until_collide * velocity.y
+
+	else:
+		if side == AABBEdges.LEFT or side == AABBEdges.RIGHT:
+			velocity.x = x_axis_time_until_collide * velocity.x
+
+		if side == AABBEdges.TOP or side == AABBEdges.BOTTOM:
+			velocity.y = y_axis_time_until_collide * velocity.y
+
+		if side == AABBEdges.CORNER:
+			shortest_time = min(x_axis_time_until_collide, y_axis_time_until_collide)
+			velocity.x = shortest_time * velocity.x
+
+
+class BasicPhysicsObject:
+	def __init__(self, x, y, collisions_handle) -> None:
 		self.position = Vector2(x, y)
 		self.velocity = Vector2(0, 0)
+		self.collisions_handle = collisions_handle
 
-		self.gravity = .001
-		self.mass = 20
-
-	def apply_force(self, force):
-		self.force_accumalated += force
-
-	def update(self, dt: int) -> None:
-		if math.isclose(self.velocity.x, 0, abs_tol=0.001): self.velocity.x = 0
-		if math.isclose(self.velocity.y, 0, abs_tol=0.001): self.velocity.y = 0
-		coeficient = 1
-		u = Vector3(0, -1, 0)
-		weight = Vector3(0, self.gravity, 0) * self.mass
-		magnitude = weight.dot(u)
-		velocity = Vector3(self.velocity.x, self.velocity.y, 0)
-		direction = u.cross(Vector3(0, 0, 1))
-		sign = direction.dot(velocity)
-		friction = sign * direction * magnitude * coeficient
-		x_friction = Vector2(friction.x, friction.y)
-
-		coeficient = 1
-		u = Vector3(-1, 0, 0)
-		weight = Vector3(self.gravity, 0, 0) * self.mass
-		magnitude = weight.dot(u)
-		velocity = Vector3(self.velocity.x, self.velocity.y, 0)
-		direction = u.cross(Vector3(0, 0, 1))
-		sign = direction.dot(velocity)
-		friction = sign * direction * magnitude * coeficient
-		y_friction = Vector2(friction.x, friction.y)
-
-		friction = Vector2(x_friction.x, y_friction.y)
-
-		print(self.velocity)
-		print(friction)
-
-		acceleration = self.force_accumalated / self.mass
-		acceleration += friction / self.mass
-		acceleration += Vector2(0, self.gravity)
-
-		self.force_accumalated = Vector2(0, 0)
-
-		self.velocity += acceleration * dt
+	def update(self, dt: float):
+		self.collisions_handle(self, dt)
 		self.position += self.velocity * dt
-
-
-
-class PhysicsCharacter(PhysicsObject):
-	def __init__(self, x: float, y: float) -> None:
-		PhysicsObject.__init__(self, x, y)
-		self.on_floor = False
-		self.on_wall = False
-		self.terminal_sliding_speed = 0.1
-		self.terminal_falling_speed = 0.75
-		self.terminal_running_speed = 0.75
-		self.gravity_while_falling = 0.001
-		self.gravity_while_rising = 0.00075
-		self.floor_friction = 0.5
-		self.handle_collision = None
-
-	def update(self, dt):
-		if not self.on_floor:
-			if self.velocity.y > 0:
-				self.gravity = self.gravity_while_falling
-			else:
-				self.gravity = self.gravity_while_rising
-
-		# if self.on_wall:
-		# 	self.terminal_falling_speed = 0.25
-		# else:
-		# 	self.terminal_falling_speed = 0.75
-
-		keys = pygame.key.get_pressed()
-		if keys[pygame.K_w]:
-			self.apply_force(Vector2(0, -0.075))
-		if keys[pygame.K_a]:
-			self.apply_force(Vector2(-0.0025, 0))
-		if keys[pygame.K_s]:
-			self.apply_force(Vector2(0, 0.0025))
-		if keys[pygame.K_d]:
-			self.apply_force(Vector2(0.0025, 0))
-
-
-		# self.velocity.x *= self.floor_friction
-
-		# self.velocity.y = min(self.velocity.y, self.terminal_falling_speed)
-
-		# self.velocity.x = clamp(self.velocity.x, -self.terminal_running_speed, self.terminal_running_speed)
-
-		if self.handle_collision: self.handle_collision(self, dt)
-
-		PhysicsObject.update(self, dt)
-
-	def render(self):
-		pygame.draw.rect(window.surface, (0, 0, 0, 255), Rect(self.position.x, self.position.y, 32, 32))

@@ -1,19 +1,31 @@
-from typing import Any, Optional, Tuple, Type
-from physics import PhysicsCharacter
+from typing import Type
+from pygame.event import Event
+from player import Player
 
 class Scene:
-	def __init__(self, name, manager):
+	def __init__(self, name: str, manager):
 		self.name = name
 		self.manager = manager
 
-	def event_handle(self, event):
+	def event_handle(self, event: Event):
 		pass
 
-	def update(self, dt):
+	def update(self, dt: float):
 		pass
 
 	def render(self):
 		pass
+
+class SceneGame(Scene):
+	def __init__(self, name: str, manager):
+		Scene.__init__(self, name, manager)
+		self.player = Player(0, 0)
+
+	def update(self, dt: float):
+		self.player.update(dt)
+
+	def render(self):
+		self.player.render()
 
 class SceneManager:
 	def __init__(self):

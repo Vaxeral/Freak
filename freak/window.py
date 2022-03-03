@@ -12,5 +12,6 @@ class Window:
 			game = getattr(self, "game", None)
 			if game:
 				game.is_running = False
+	
 
 instance = Window(640, 480, "Freak")
