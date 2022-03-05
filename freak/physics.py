@@ -1,69 +1,73 @@
-from typing import Tuple
-from pygame import Vector2, Rect
-from enum import Enum
+import math
 
-def is_AABB_intersection(rect: Rect, other: Rect) -> bool:
-	return rect.x < other.x + other.w and other.x < rect.x + rect.w and rect.y < other.y + other.h and other.y < rect.y + rect.h
+def is_AABB_collision(a, b, v, dt):
+	dx = v.x * dt
+	dy = v.y * dt
 
-def AABB_distance_to(rect: Rect, other: Rect) -> Tuple[int, int]:
-	dx = 0
-	dy = 0
-
-	if rect.x < other.x:
-		dx = other.x - (rect.x + rect.w)
-	elif rect.x > other.x:
-		dx = rect.x - (other.x + other.w)
-
-	if rect.y < other.y:
-		dy = other.y - (rect.y + rect.h)
-	elif rect.y > other.y:
-		dy = rect.y - (other.y + other.h)
-
-	return dx, dy
-
-class AABBEdges(Enum):
-	LEFT = 0
-	RIGHT = 1
-	TOP = 2
-	BOTTOM = 3
-	CORNER = 4
-
-def AABB_collision_response(rect: Rect, velocity: Vector2, other: Rect, side: AABBEdges, dt: float, collisions: int):
-	distance_x, distance_y = AABB_distance_to(rect, other)
-	velocity_x, velocity_y = velocity.x * dt, velocity.y * dt
-	x_axis_time_until_collide = abs(float(distance_x) / float(velocity_x)) if velocity_x != 0 else 0	
-	y_axis_time_until_collide = abs(float(distance_y) / float(velocity_y)) if velocity_y != 0 else 0
-
-	if velocity_x != 0 and velocity_y == 0:
-		if side == AABBEdges.LEFT or side == AABBEdges.RIGHT:
-			velocity.x = x_axis_time_until_collide * velocity.x
-
-	elif velocity_x == 0 and velocity_y != 0:
-		if side == AABBEdges.TOP or side == AABBEdges.BOTTOM: 
-			velocity.y = y_axis_time_until_collide * velocity.y
-
+	if dx > 0.0:
+		enx = b.x - (a.x + a.w)
+		exx = (b.x + b.w) - a.x
 	else:
-		if side == AABBEdges.LEFT or side == AABBEdges.RIGHT:
-			velocity.x = x_axis_time_until_collide * velocity.x
+		enx = (b.x + b.w) - a.x
+		exx = b.x - (a.x + a.w)
 
-		if side == AABBEdges.TOP or side == AABBEdges.BOTTOM:
-			velocity.y = y_axis_time_until_collide * velocity.y
+	if dy > 0.0:
+		eny = b.y - (a.y + a.h)
+		exy = (b.y + b.h) - a.y
+	else:
+		eny = (b.y + b.h) - a.y
+		exy = b.y - (a.y + a.h)
 
-		if side == AABBEdges.CORNER:
-			shortest_time = min(x_axis_time_until_collide, y_axis_time_until_collide)
-			if collisions <= 1: velocity.x = shortest_time * velocity.x
-			# if collisions <= 1: velocity.y = shortest_time * velocity.y
+	if dx == 0.0:
+		entx = -math.inf
+		extx = math.inf
+	else:
+		entx = enx / dx
+		extx = exx / dx
 
+	if dy == 0.0:
+		enty = -math.inf
+		exty = math.inf
+	else:
+		enty = eny / dy
+		exty = exy / dy
 
-			# print("corner")
+	if entx > 1.0: entx = -math.inf
+	if enty > 1.0: enty = -math.inf
 
+	ent = max(entx, enty)
+	ext = min(extx, exty)
 
-class BasicPhysicsObject:
-	def __init__(self, x, y, collisions_handle) -> None:
-		self.position = Vector2(x, y)
-		self.velocity = Vector2(0, 0)
-		self.collisions_handle = collisions_handle
+	nx = 0
+	ny = 0
 
-	def update(self, dt: float):
-		self.collisions_handle(self, dt)
-		self.position += self.velocity * dt
+	if ent > ext: 
+		return 1.0, nx, ny
+
+	if entx < 0.0 and enty < 0.0:
+		return 1.0, nx, ny
+
+	if entx < 0.0:
+		if a.x + a.w <= b.x or a.x >= b.x + b.w:
+			return 1.0, nx, ny
+
+	if enty < 0.0:
+		if a.y + a.h <= b.y or a.y >= b.y + b.h:
+			return 1.0, nx, ny
+
+	if entx > enty:
+		if enx < 0.0:
+			nx = 1.0
+			ny = 0.0
+		else:
+			nx = -1.0
+			ny = 0.0
+	else:
+		if eny < 0.0:
+			nx = 0.0
+			ny = 1.0
+		else:
+			nx = 0.0
+			ny = -1.0
+
+	return ent, nx, ny
