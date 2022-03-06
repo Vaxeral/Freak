@@ -12,6 +12,10 @@ class Window:
 			game = getattr(self, "game", None)
 			if game:
 				game.is_running = False
+
+	@property
+	def x(self):
+		return self.surface.x
 	
 
 instance = Window(640, 480, "Freak")
