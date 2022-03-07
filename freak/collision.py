@@ -1,42 +1,56 @@
 import math
+from typing import Union
 
-def is_AABB_point_collision(a, b, v, dt):
-	dx = v.x * dt
-	dy = v.y * dt
+from pygame.rect import Rect as Rect
+from pygame.math import Vector2 as Vector2
+
+def AABB_point_collision(
+	ax: Union[float, int], 
+	ay: Union[float, int], 
+	aw: Union[float, int], 
+	ah: Union[float, int],
+	bx: Union[float, int],
+	by: Union[float, int],
+	dx: Union[float, int],
+	dy: Union[float, int],
+	dt: float):
+
+	dx *= dt
+	dy *= dt
 
 	if dx > 0.0:
-		enx = b.x - (a.x + a.w)
-		exx = (b.x) - a.x
+		entryx = bx - (ax + aw)
+		exitx = bx - ax
 	else:
-		enx = (b.x) - a.x
-		exx = b.x - (a.x + a.w)
+		entryx = bx - ax
+		exitx = bx - (ax + aw)
 
 	if dy > 0.0:
-		eny = b.y - (a.y + a.h)
-		exy = (b.y) - a.y
+		entryy = by - (ay + ah)
+		exity = by - ay
 	else:
-		eny = (b.y) - a.y
-		exy = b.y - (a.y + a.h)
+		entryy = by - ay
+		exity = by - (ay + ah)
 
 	if dx == 0.0:
-		entx = -math.inf
-		extx = math.inf
+		entrytx = -math.inf
+		exittx = math.inf
 	else:
-		entx = enx / dx
-		extx = exx / dx
+		entrytx = entryx / dx
+		exittx = exitx / dx
 
 	if dy == 0.0:
-		enty = -math.inf
-		exty = math.inf
+		entryty = -math.inf
+		exitty = math.inf
 	else:
-		enty = eny / dy
-		exty = exy / dy
+		entryty = entryy / dy
+		exitty = exity / dy
 
-	if entx > 1.0: entx = -math.inf
-	if enty > 1.0: enty = -math.inf
+	if entrytx > 1.0: entrytx = -math.inf
+	if entryty > 1.0: entryty = -math.inf
 
-	ent = max(entx, enty)
-	ext = min(extx, exty)
+	ent = max(entrytx, entryty)
+	ext = min(exittx, exitty)
 
 	nx = 0
 	ny = 0
@@ -44,26 +58,26 @@ def is_AABB_point_collision(a, b, v, dt):
 	if ent > ext: 
 		return 1.0, nx, ny
 
-	if entx < 0.0 and enty < 0.0:
+	if entrytx < 0.0 and entryty < 0.0:
 		return 1.0, nx, ny
 
-	if entx < 0.0:
-		if a.x + a.w <= b.x or a.x >= b.x:
+	if entrytx < 0.0:
+		if ax + aw <= bx or ax >= bx:
 			return 1.0, nx, ny
 
-	if enty < 0.0:
-		if a.y + a.h <= b.y or a.y >= b.y:
+	if entryty < 0.0:
+		if ay + ah <= by or ay >= by:
 			return 1.0, nx, ny
 
-	if entx > enty:
-		if enx < 0.0:
+	if entrytx > entryty:
+		if entryx < 0.0:
 			nx = 1.0
 			ny = 0.0
 		else:
 			nx = -1.0
 			ny = 0.0
 	else:
-		if eny < 0.0:
+		if entryy < 0.0:
 			nx = 0.0
 			ny = 1.0
 		else:
@@ -77,38 +91,38 @@ def is_AABB_collision(a, b, v, dt):
 	dy = v.y * dt
 
 	if dx > 0.0:
-		enx = b.x - (a.x + a.w)
-		exx = (b.x + b.w) - a.x
+		entryx = bx - (ax + aw)
+		exitx = (bx + bw) - ax
 	else:
-		enx = (b.x + b.w) - a.x
-		exx = b.x - (a.x + a.w)
+		entryx = (bx + bw) - ax
+		exitx = bx - (ax + aw)
 
 	if dy > 0.0:
-		eny = b.y - (a.y + a.h)
-		exy = (b.y + b.h) - a.y
+		entryy = by - (ay + ah)
+		exity = (by + bh) - ay
 	else:
-		eny = (b.y + b.h) - a.y
-		exy = b.y - (a.y + a.h)
+		entryy = (by + bh) - ay
+		exity = by - (ay + ah)
 
 	if dx == 0.0:
-		entx = -math.inf
-		extx = math.inf
+		entrytx = -math.inf
+		exittx = math.inf
 	else:
-		entx = enx / dx
-		extx = exx / dx
+		entrytx = entryx / dx
+		exittx = exitx / dx
 
 	if dy == 0.0:
-		enty = -math.inf
-		exty = math.inf
+		entryty = -math.inf
+		exitty = math.inf
 	else:
-		enty = eny / dy
-		exty = exy / dy
+		entryty = entryy / dy
+		exitty = exity / dy
 
-	if entx > 1.0: entx = -math.inf
-	if enty > 1.0: enty = -math.inf
+	if entrytx > 1.0: entrytx = -math.inf
+	if entryty > 1.0: entryty = -math.inf
 
-	ent = max(entx, enty)
-	ext = min(extx, exty)
+	ent = max(entrytx, entryty)
+	ext = min(exittx, exitty)
 
 	nx = 0
 	ny = 0
@@ -116,26 +130,26 @@ def is_AABB_collision(a, b, v, dt):
 	if ent > ext: 
 		return 1.0, nx, ny
 
-	if entx < 0.0 and enty < 0.0:
+	if entrytx < 0.0 and entryty < 0.0:
 		return 1.0, nx, ny
 
-	if entx < 0.0:
-		if a.x + a.w < b.x or a.x > b.x + b.w:
+	if entrytx < 0.0:
+		if ax + aw < bx or ax > bx + bw:
 			return 1.0, nx, ny
 
-	if enty < 0.0:
-		if a.y + a.h < b.y or a.y > b.y + b.h:
+	if entryty < 0.0:
+		if ay + ah < by or ay > by + bh:
 			return 1.0, nx, ny
 
-	if entx > enty:
-		if enx < 0.0:
+	if entrytx > entryty:
+		if entryx < 0.0:
 			nx = 1.0
 			ny = 0.0
 		else:
 			nx = -1.0
 			ny = 0.0
 	else:
-		if eny < 0.0:
+		if entryy < 0.0:
 			nx = 0.0
 			ny = 1.0
 		else:

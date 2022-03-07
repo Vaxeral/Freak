@@ -23,7 +23,7 @@ class Scene:
 class SceneGame(Scene):
 	def __init__(self, name):
 		Scene.__init__(self, name)
-		self.player = Player(0, 128)
+		self.player = Player(128, 128 - 32)
 
 	def update(self, dt: float):
 		self.player.update(dt)
